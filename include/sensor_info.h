@@ -23,6 +23,7 @@ struct VelReading {
 struct LaserReading {
     uint64_t id;
     float range;
+    //bearing angle
     float bearing;
 };
 
@@ -33,12 +34,14 @@ class Record {
  public:
     Record() {}
     OdoReading odo;
+    // this is a vector bc each time step might have multiple laser readings
     vector<LaserReading> scans;
+
 };
 
 // Class to represent measured data
 // data - vector containing all sensor readings at each time step
-// initialize - read in sensor information from file with specfied path 
+// initialize - read in sensor information from file with specfied path
 class MeasurementPackage {
  public:
   vector<Record> data;
