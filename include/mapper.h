@@ -30,14 +30,17 @@ void Mapper::initialize(const string& filename) {
 
     // TODO: Complete initialize()
     string line;
-    MapPoint mapPoint;
-    while (getline(in_file, line)){
-      istringstrem ss(line);
-      ss >> mapPoint.id;
-      ss >> mapPoint.x;
-      ss >> mapPoint.y;
-      data.push_back(mapPoint);
-    }
+  	while(getline(in_file, line)) {
+  		istringstream ss(line);
+  		MapPoint mp;
+  		ss>>mp.id;
+  		ss>>mp.x;
+  		ss>>mp.y;
+  		data.push_back(mp);
+  		if (debug)
+  		cout << data.back().id << ": " << data.back().x << ": " << data.back().y << endl;
+      
+  	}
 
     if (in_file.is_open()) {
         in_file.close();
