@@ -1,6 +1,7 @@
 #include "../include/mapper.h"
 #include "iostream"
 #include "ekfslam.h"
+#include "../include/sensor_info.h"
 
 
 int main(int argc, char* argv[]) {
@@ -12,6 +13,11 @@ int main(int argc, char* argv[]) {
 
   Mapper mapper;
   mapper.initialize(argv[2]);
+
+  MeasurementPackage sensor_info;
+  sensor_info.initialize(argv[1]);
+
+  
 
 
   return 0;
