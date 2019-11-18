@@ -55,6 +55,12 @@ void EKFSLAM::Prediction(const OdoReading& motion)
       mu(1) = mu(1) + t*s;
       mu(2) = mu(2) + r1 + r2;
 
+      int size = Sigma.cols();
+      Sigma.topLeftCorner(3,3) = Gt * Sigma.topLeftCorner(3,3) * Gt.transpose();
+      Sigma.topRightCorner(3, size-3) = Gt * Sigma.topRightCorner(3, size-3);
+      Sigma.bottomLeftCorner(size-3, 3) = Sigma.topRightCorner(3, size-3).transpose();
+      Sigma = Sigma + Q_;
+
 
 
 
