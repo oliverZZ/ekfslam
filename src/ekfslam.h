@@ -24,6 +24,9 @@ class EKFSLAM {
     Eigen::MatrixXd Q;
     // Vector of observed landmarks
     vector<bool> observedLandmarks;
+    // number of landmark
+    int N;
+
 
  public:
     // Default Constructor
