@@ -2,22 +2,27 @@
 #include <tuple>
 
 EKFSLAM::EKFSLAM() {
-  is_initialized_ = false;
+  //is_initialized_ = false; I'm not sure what this does, but it is throwing an error FIXME
 }
 
-EKFSLAM(unsigned int landmark_size,
+EKFSLAM::~EKFSLAM()//destructor
+{
+	cout << "Deconstructing\n"; //-------------------------------FIXME Might need to get this to work properly but this works for now
+}//~EKFSLAM()
+
+EKFSLAM::EKFSLAM(unsigned int landmark_size,
     unsigned int robot_pose_size,
     float _motion_noise) {
 
       N = landmark_size;
-      int r = rob_pose_size;
+      int r = robot_pose_size;
       mu          = VectorXd::Zero(2*N + r, 1); // Full State Vector
-      robSigma    = MatrixXd::Zero(r, r); // Covariance Matrix for robot state variables
+      robotSigma    = MatrixXd::Zero(r, r); // Covariance Matrix for robot state variables
       robMapSigma = MatrixXd::Zero(r, 2*N); // Covariance Matrix for robot to landmarks
       mapSigma    = INF*MatrixXd::Identity(2*N, 2*N); // Covariances of landmark positions wrt to each other
       Sigma       = MatrixXd::Zero(2*N + r, 2*N + r);// Full Covariance Matrix
 
-      Sigma.topLeftCorner(r, r)          = robSigma;
+      Sigma.topLeftCorner(r, r)          = robotSigma;
       Sigma.topRightCorner(r, 2*N)       = robMapSigma;
       Sigma.bottomLeftCorner(2*N, r)     = robMapSigma.transpose();
       Sigma.bottomRightCorner(2*N, 2*N)  = mapSigma;
@@ -39,11 +44,11 @@ void EKFSLAM::Prediction(const OdoReading& motion)
       double t     = motion.t;
       double r2    = motion.r2;
 
-      MatrixXd Gt = MatrixXd(3,3);
-      Gt << 1, 0, -t*sin(angle + r1),
+      MatrixXd Gtx = MatrixXd(3,3);
+      Gtx << 1, 0, -t*sin(angle + r1),
              0, 1,  t*cos(angle + r1),
              0, 0,  1;
-      MatrixXd Gt = MatrixXd::Zero(3+2*N, 3+2*N);
+      //MatrixXd Gt = MatrixXd::Zero(3+2*N, 3+2*N);
 
       //Gt.topLeftCorner(3,3) << Gtx;
       //Gt.bottomRightCorner(2*N, 2*N) << MatrixXd::Identity(2*N, 2*N);
@@ -56,8 +61,8 @@ void EKFSLAM::Prediction(const OdoReading& motion)
       mu(2) = mu(2) + r1 + r2;
 
       int size = Sigma.cols();
-      Sigma.topLeftCorner(3,3) = Gt * Sigma.topLeftCorner(3,3) * Gt.transpose();
-      Sigma.topRightCorner(3, size-3) = Gt * Sigma.topRightCorner(3, size-3);
+      Sigma.topLeftCorner(3,3) = Gtx * Sigma.topLeftCorner(3,3) * Gtx.transpose();
+      Sigma.topRightCorner(3, size-3) = Gtx * Sigma.topRightCorner(3, size-3);
       Sigma.bottomLeftCorner(size-3, 3) = Sigma.topRightCorner(3, size-3).transpose();
       Sigma = Sigma + R;
 }//Prediction()
@@ -67,14 +72,14 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation)
 {
 	//observation is a vector of all the observed landmarks at one time step
 	
-	for(int i = 0; i < observation.size; i++)//for all observed landmarks
+	for(int i = 0; (long unsigned int)i < observation.size(); i++)//for all observed landmarks
 	{
-		LaserReading Cit = observation(i);
+		LaserReading Cit = observation[i];
 		std::tuple<float, float> Zit (Cit.range, Cit.bearing);
 		
 		if(observedLandmarks[Cit.id] == false) //if landmark unobserved
 		{
-				
+			cout << "Hey, you got in here!\n";
 		}//if landmark unobserved
 		
 	}//for all observed landmarks
