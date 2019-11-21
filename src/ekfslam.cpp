@@ -1,4 +1,5 @@
 #include "ekfslam.h"
+#include <tuple>
 
 EKFSLAM::EKFSLAM() {
   is_initialized_ = false;
@@ -29,10 +30,10 @@ EKFSLAM(unsigned int landmark_size,
                               0, 0,   motion_noise/10;
       observedLandmarks.resize(N);
       fill(observedLandmarks.begin(), observedLandmarks.end(), false);
-}
+}//constructor
 
 void EKFSLAM::Prediction(const OdoReading& motion)
-
+{
       double angle = mu(2);
       double r1    = motion.r1;
       double t     = motion.t;
@@ -59,4 +60,22 @@ void EKFSLAM::Prediction(const OdoReading& motion)
       Sigma.topRightCorner(3, size-3) = Gt * Sigma.topRightCorner(3, size-3);
       Sigma.bottomLeftCorner(size-3, 3) = Sigma.topRightCorner(3, size-3).transpose();
       Sigma = Sigma + R;
-}
+}//Prediction()
+
+
+void EKFSLAM::Correction(const vector<LaserReading>& observation)
+{
+	//observation is a vector of all the observed landmarks at one time step
+	
+	for(int i = 0; i < observation.size; i++)//for all observed landmarks
+	{
+		LaserReading Cit = observation(i);
+		std::tuple<float, float> Zit (Cit.range, Cit.bearing);
+		
+		if(observedLandmarks[Cit.id] == false) //if landmark unobserved
+		{
+				
+		}//if landmark unobserved
+		
+	}//for all observed landmarks
+}//Correction()
