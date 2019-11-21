@@ -4,16 +4,11 @@ EKFSLAM::EKFSLAM() {
   is_initialized_ = false;
 }
 
-void EKFSLAM(unsigned int landmark_size,
+EKFSLAM(unsigned int landmark_size,
     unsigned int robot_pose_size,
     float _motion_noise) {
-      Eigen::MatrixXd robSigma;
-      Eigen::MatrixXd robMapSigma;
-      Eigen::MatrixXd Sigma;
-      Eigen::MatrixXd mapSigma;
 
-
-      int N = landmark_size;
+      N = landmark_size;
       int r = rob_pose_size;
       mu          = VectorXd::Zero(2*N + r, 1); // Full State Vector
       robSigma    = MatrixXd::Zero(r, r); // Covariance Matrix for robot state variables
@@ -28,10 +23,10 @@ void EKFSLAM(unsigned int landmark_size,
 
       float motion_noise =_motion_noise;
 
-      Q_  = MatrixXd::Zero(2*N + r, 2*N + r); // Noise Matrix due to sensors
-      Q_.topLeftCorner(3,3) << motion_noise, 0, 0,
-            0, motion_noise , 0,
-            0, 0,   motion_noise/10;
+      R  = MatrixXd::Zero(2*N + r, 2*N + r); // Noise Matrix due to sensors
+      R.topLeftCorner(3,3) << motion_noise, 0, 0,
+                              0, motion_noise , 0,
+                              0, 0,   motion_noise/10;
       observedLandmarks.resize(N);
       fill(observedLandmarks.begin(), observedLandmarks.end(), false);
 }
@@ -45,8 +40,12 @@ void EKFSLAM::Prediction(const OdoReading& motion)
 
       MatrixXd Gt = MatrixXd(3,3);
       Gt << 1, 0, -t*sin(angle + r1),
-            0, 1,  t*cos(angle + r1),
-            0, 0,  0;
+             0, 1,  t*cos(angle + r1),
+             0, 0,  1;
+      MatrixXd Gt = MatrixXd::Zero(3+2*N, 3+2*N);
+
+      //Gt.topLeftCorner(3,3) << Gtx;
+      //Gt.bottomRightCorner(2*N, 2*N) << MatrixXd::Identity(2*N, 2*N);
 
       float c = cos(angle + r1);
       float s = sin(angle + r1);
@@ -59,10 +58,5 @@ void EKFSLAM::Prediction(const OdoReading& motion)
       Sigma.topLeftCorner(3,3) = Gt * Sigma.topLeftCorner(3,3) * Gt.transpose();
       Sigma.topRightCorner(3, size-3) = Gt * Sigma.topRightCorner(3, size-3);
       Sigma.bottomLeftCorner(size-3, 3) = Sigma.topRightCorner(3, size-3).transpose();
-      Sigma = Sigma + Q_;
-
-
-
-
-
+      Sigma = Sigma + R;
 }
