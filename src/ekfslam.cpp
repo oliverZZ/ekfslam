@@ -60,12 +60,14 @@ void EKFSLAM::Prediction(const OdoReading& motion)
 void EKFSLAM::Correction(const vector<LaserReading>& observation){
         int m = observation.size(); // number of measurements
         int N = observedLandmarks.size();
-        MatrixXd H = MatrixXd::Zero(5, 2*N + 3); //observation Jacobian. Size is the same as Fx,j
-        MatrixXd Q = MatrixXd::Identity(5,5)*0.01; // sensor noise matrix
-        MatrixXd Z          = MatrixXd::Zero(2*m);
-        MatrixXd expectedZ  = MatrixXd::Zero(2*m);
-        MatrixXd Fxj = MatrixXd::Zero(5, 2*N+3);
-        MatrixXd LowH = MatrixXd::Zero(2,5);
+		
+        Eigen::MatrixXd H              = MatrixXd::Zero(5, 2*N + 3); //observation Jacobian. Size is the same as Fx,j
+        Eigen::MatrixXd Q              = MatrixXd::Identity(5,5)*0.01; // sensor noise matrix
+        Eigen::MatrixXd Z              = MatrixXd::Zero(2*m);
+        Eigen::MatrixXd expectedZ  = MatrixXd::Zero(2*m);
+        Eigen::MatrixXd Fxj            = MatrixXd::Zero(5, 2*N+3);
+        Eigen::MatrixXd LowH         = MatrixXd::Zero(2,5);
+		
         Fxj.block<3,3>(0,0) << 1,0,0,
                                0,1,0,
                                0,0,1;
@@ -86,7 +88,7 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation){
                 //Indicate in the observedLandmarks vector that this landmark has been observed
                 observedLandmarks[landmarkId-1] = true;
                 }
-             MatrixXd Delta = MatrixXd::Zero(1,1);
+             Eigen::MatrixXd Delta = MatrixXd::Zero(1,1);
              Delta(0) = mu(2*landmarkId+1) - mu(0);// delta x
              Delta(1) = mu(2*landmarkId+2) - mu(1);//delta y
              float q = Delta.transpose * Delta;
@@ -95,11 +97,11 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation){
              LowH << -sqrt(q)*Delta(0)/q, -sqrt(q)*Delta(1)/q, 0, sqrt(q)*Delta(0)/q, sqrt(q)*Delta(1)/q,
                       Delta(1)/q,         -1 * Delta(0)/q,  -q/q, -1*Delta(1)/q,      Delta(0)/q;
               H = LowH * Fxj;
-              MatrixXd Ht = H.transpose();
-              MatrixXd HQ = (H*Sigma*Ht) + Q;
-              MatrixXd Si = HQ.inverse();
-              MatrixXd K = Sigma*Ht*Si;
-              VectorXd diff = Z - expectedZ;
+              Eigen::MatrixXd Ht = H.transpose();
+              Eigen::MatrixXd HQ = (H*Sigma*Ht) + Q;
+              Eigen::MatrixXd Si = HQ.inverse();
+              Eigen::MatrixXd K = Sigma*Ht*Si;
+              Eigen::VectorXd diff = Z - expectedZ;
               tools.normalize_bearing(diff);
               mu = mu + K * diff;
               Sigma = Sigma - K*H*Sigma;
