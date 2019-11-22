@@ -26,6 +26,8 @@ class EKFSLAM {
     vector<bool> observedLandmarks;
     // number of landmark
     int N;
+	//if default constructor called, will be false
+	bool is_initalized_;
 
 
  public:
