@@ -60,3 +60,18 @@ void EKFSLAM::Prediction(const OdoReading& motion)
       Sigma.bottomLeftCorner(size-3, 3) = Sigma.topRightCorner(3, size-3).transpose();
       Sigma = Sigma + R;
 }
+
+void EKFSLAM::Correction(const vector<LaserReading>& observation){
+        int m = observation.size(); // number of
+
+
+
+
+
+
+
+
+
+
+
+}
