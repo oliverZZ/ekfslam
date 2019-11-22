@@ -2,6 +2,7 @@
 #include "iostream"
 #include "ekfslam.h"
 #include "../include/sensor_info.h"
+#inlcude "../include/plotter.h"
 
 
 int main(int argc, char* argv[]) {
@@ -17,7 +18,13 @@ int main(int argc, char* argv[]) {
   MeasurementPackage sensor_info;
   sensor_info.initialize(argv[1]);
 
-  
+  plotter Draw;
+
+
+
+
+
+
 
 
   return 0;
