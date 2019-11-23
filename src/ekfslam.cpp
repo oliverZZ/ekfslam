@@ -6,9 +6,9 @@ EKFSLAM::EKFSLAM() {
 
 EKFSLAM::EKFSLAM(unsigned int landmark_size, unsigned int robot_pose_size, float _motion_noise) {
 
-      N = landmark_size;
+      int N = landmark_size;
       int r = robot_pose_size;
-      mu          = VectorXd::Zero(2*N + r, 1); // Full State Vector
+      mu          = VectorXd::Zero(2*N + r); // Full State Vector
       robotSigma    = MatrixXd::Zero(r, r); // Covariance Matrix for robot state variables
       robMapSigma = MatrixXd::Zero(r, 2*N); // Covariance Matrix for robot to landmarks
       mapSigma    = INF*MatrixXd::Identity(2*N, 2*N); // Covariances of landmark positions wrt to each other
@@ -28,6 +28,8 @@ EKFSLAM::EKFSLAM(unsigned int landmark_size, unsigned int robot_pose_size, float
       observedLandmarks.resize(N);
       fill(observedLandmarks.begin(), observedLandmarks.end(), false);
 }
+
+
 
 void EKFSLAM::Prediction(const OdoReading& motion) {
 
@@ -60,11 +62,11 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation){
         int N = observedLandmarks.size();
 
         Eigen::MatrixXd H              = MatrixXd::Zero(5, 2*N + 3); //observation Jacobian. Size is the same as Fx,j
-        Eigen::MatrixXd Q              = MatrixXd::Identity(5,5)*0.01; // sensor noise matrix
-        Eigen::MatrixXd Z              = MatrixXd::Zero(2*m);
-        Eigen::MatrixXd expectedZ  = MatrixXd::Zero(2*m);
+        Eigen::MatrixXd Q              = MatrixXd::Identity(2,2)*0.01; // sensor noise matrix
+        Eigen::MatrixXd Z              = MatrixXd::Zero(2*m,1);
+        Eigen::MatrixXd expectedZ      = MatrixXd::Zero(2*m,1);
         Eigen::MatrixXd Fxj            = MatrixXd::Zero(5, 2*N+3);
-        Eigen::MatrixXd LowH         = MatrixXd::Zero(2,5);
+        Eigen::MatrixXd LowH           = MatrixXd::Zero(2,5);
 
         Fxj.block<3,3>(0,0) << 1,0,0,
                                0,1,0,
@@ -103,7 +105,7 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation){
 
 
               for (int j = 1; j < diff.size(); j += 2) {
-                  
+
                       while(diff(j)>M_PI) {
                         diff(j) = diff(j) - 2*M_PI;
                       }

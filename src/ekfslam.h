@@ -24,10 +24,7 @@ class EKFSLAM {
     Eigen::MatrixXd Q;
     // Vector of observed landmarks
     vector<bool> observedLandmarks;
-    // number of landmark
-    int N;
-	//if default constructor called, will be false
-	bool is_initalized_;
+
 
 
  public:
@@ -45,7 +42,7 @@ class EKFSLAM {
         float _motion_noise = 0.1);
 
     // Standard Destructor
-    virtual ~EKFSLAM();
+    virtual ~EKFSLAM(){};
 
 
     /****** TODO *********/
@@ -67,6 +64,9 @@ class EKFSLAM {
 
     MatrixXd getSigma() const {
         return Sigma;
+    }
+    vector<bool> getObservedLandmarks() const {
+        return observedLandmarks;
     }
 };
 
