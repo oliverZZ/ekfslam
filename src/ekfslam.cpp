@@ -22,9 +22,9 @@ EKFSLAM::EKFSLAM(unsigned int landmark_size, unsigned int robot_pose_size, float
       float motion_noise =_motion_noise;
 
       R  = MatrixXd::Zero(2*N + r, 2*N + r); // Noise Matrix due to montions
-      R.topLeftCorner(3,3) << motion_noise, 0, 0,
-                              0, motion_noise , 0,
-                              0, 0,   motion_noise/10;
+      R.topLeftCorner(3,3) << motion_noise*3, 0, 0,
+                              0, motion_noise*3 , 0,
+                              0, 0,   motion_noise*2;
       observedLandmarks.resize(N);
       fill(observedLandmarks.begin(), observedLandmarks.end(), false);
 }
@@ -33,17 +33,17 @@ EKFSLAM::EKFSLAM(unsigned int landmark_size, unsigned int robot_pose_size, float
 
 void EKFSLAM::Prediction(const OdoReading& motion) {
 
-      double angle = this->mu(2);
-      double r1    = motion.r1; //first rotation
-      double r2    = motion.r2;//second rotation
+      double angle = normalized(mu(2));
+      double r1    = normalized(motion.r1); //first rotation
+      double r2    = normalized(motion.r2);//second rotation
       double t     = motion.t; //transition
 
       float c = cos(angle + r1);
       float s = sin(angle + r1);
 
-      this->mu(0) = mu(0) + t*c;
-      this->mu(1) = mu(1) + t*s;
-      this->mu(2) = mu(2) + r1 + r2; //update state vector mu
+      mu(0) = mu(0) + t*c;
+      mu(1) = mu(1) + t*s;
+      mu(2) = normalized(mu(2)) + r1 + r2; //update state vector mu
 
       MatrixXd Gxt = MatrixXd(3,3); // Jacobian of motion
       Gxt << 1, 0, -t*sin(angle + r1),
@@ -68,7 +68,7 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation){
 
 
         Eigen::MatrixXd H              = MatrixXd::Zero(5, 2*N + 3); //observation Jacobian. Size is the same as Fx,j
-        Eigen::MatrixXd Q              = MatrixXd::Identity(2,2)*0.01; // sensor noise matrix
+        Eigen::MatrixXd Q              = MatrixXd::Identity(2,2)*0.1; // sensor noise matrix
         Eigen::VectorXd Z              = VectorXd::Zero(2);
         Eigen::VectorXd expectedZ      = VectorXd::Zero(2);
 
@@ -79,7 +79,7 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation){
             auto&     reading = observation[i];
             int       landmarkId = reading.id;
             float     range      = reading.range;
-            float     bearing    = reading.bearing;
+            float     bearing    = normalized(reading.bearing);
             Z(0) = range;
             Z(1) = bearing;
             Eigen::MatrixXd Fxj            = MatrixXd::Zero(5, sigma_rows);
@@ -88,12 +88,10 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation){
                                    0,0,1;
             Fxj.block<2,2>(3,2*landmarkId+1) << 1,0,
                                                 0,1;
-            std::cout << "landmarkId"<<landmarkId << '\n';
-            std::cout << Fxj << '\n';
             //landmark is not seen before, so to initialize the landmarks
             if (!observedLandmarks[landmarkId-1]) {
-                pos_mu(0) = robot_mu(0) + range*cos(mu(2) + robot_mu(2));
-                pos_mu(1) = robot_mu(1) + range*sin(mu(2) + robot_mu(2));
+                pos_mu(0) = robot_mu(0) + range*cos(normalized(mu(2)) + normalized(robot_mu(2)));
+                pos_mu(1) = robot_mu(1) + range*sin(normalized(mu(2)) + normalized(robot_mu(2)));
 
                 //Indicate in the observedLandmarks vector that this landmark has been observed
                 robot_mu(landmarkId*2+1) = pos_mu(0);
@@ -108,6 +106,15 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation){
              //Eigen::MatrixXd Delta = MatrixXd::Zero(2,1);
              double Deltax = pos_mu(0) - robot_mu(0);// delta x
              double Deltay = pos_mu(1) - robot_mu(1);//delta y
+			 
+			 if(Deltax > range || Deltay > range)
+			 {
+				cout << "range        = " << range << "\n";
+				cout << "deltaX       = " << Deltax << "\n";//----------------------DELETEME
+				cout << "deltaY       = " << Deltay << "\n";//-----------------------DELETEME
+				cout << "calc Range = " << sqrt(Deltax*Deltax + Deltay*Deltay) << "\n";
+				cout << "range diff   = " << range - sqrt(Deltax*Deltax + Deltay*Deltay) << "\n\n";
+			 }
              double q = pow(Deltax, 2) + pow(Deltay, 2);
              expectedZ(0) = sqrt(q);
              expectedZ(1) = normalized(atan2(Deltay, Deltax) - normalized(robot_mu(2)));
