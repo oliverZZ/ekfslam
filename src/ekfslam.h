@@ -68,6 +68,17 @@ class EKFSLAM {
     vector<bool> getObservedLandmarks() const {
         return observedLandmarks;
     }
+	
+	float normalized(float angle)
+	{
+		//returns an angle that has been normalized to be within the range of -pi->pi
+		if(angle > 3.14159)            //if angle > pi
+			return angle - 3.14159;
+		else if(angle < -3.14159)    //if angle < -pi
+			return angle + 3.14159;
+		else                                 //else angle in range
+			return angle;
+	}//normalized()
 };
 
 #endif  // EKFSLAM_H
