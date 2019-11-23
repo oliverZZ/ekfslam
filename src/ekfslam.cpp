@@ -110,7 +110,7 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation){
              double Deltay = pos_mu(1) - robot_mu(1);//delta y
              double q = pow(Deltax, 2) + pow(Deltay, 2);
              expectedZ(0) = sqrt(q);
-             expectedZ(1) = normailized(atan2(Deltay, Deltax) - normalized(robot_mu(2)));
+             expectedZ(1) = normalized(atan2(Deltay, Deltax) - normalized(robot_mu(2)));
              LowH << -sqrt(q)*Deltax/q, -sqrt(q)*Deltay/q, 0, sqrt(q)*Deltax/q, sqrt(q)*Deltay/q,
                       Deltay/q,         -1 * Deltax/q,  -q/q, -1*Deltay/q,      Deltax/q;
               H = LowH * Fxj;
