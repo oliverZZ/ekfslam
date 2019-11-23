@@ -60,11 +60,11 @@ void EKFSLAM::Prediction(const OdoReading& motion) {
 void EKFSLAM::Correction(const vector<LaserReading>& observation){
         int m = observation.size(); // number of measurements
         int N = observedLandmarks.size();
-        int sigma_rows = this->Sigma.rows();
+        int sigma_rows = Sigma.rows();
         Eigen::VectorXd pos_mu;
-        Eigen::VectorXd robot_mu;
+        Eigen::VectorXd* robot_mu;
         pos_mu   = mu;
-        robot_mu = mu;
+        robot_mu = &mu;
 
 
         Eigen::MatrixXd H              = MatrixXd::Zero(5, 2*N + 3); //observation Jacobian. Size is the same as Fx,j
@@ -90,22 +90,22 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation){
                                                 0,1;
             //landmark is not seen before, so to initialize the landmarks
             if (!observedLandmarks[landmarkId-1]) {
-                pos_mu(0) = robot_mu(0) + range*cos(normalized(mu(2)) + normalized(robot_mu(2)));
-                pos_mu(1) = robot_mu(1) + range*sin(normalized(mu(2)) + normalized(robot_mu(2)));
+                pos_mu(0) = (*robot_mu)[0] + range*cos(normalized(mu(2)) + normalized((*robot_mu)[2]));
+                pos_mu(1) = (*robot_mu)[1] + range*sin(normalized(mu(2)) + normalized((*robot_mu)[2]));
 
                 //Indicate in the observedLandmarks vector that this landmark has been observed
-                robot_mu(landmarkId*2+1) = pos_mu(0);
-                robot_mu(landmarkId*2+2) = pos_mu(1);
+                (*robot_mu)[landmarkId*2+1] = pos_mu(0);
+                (*robot_mu)[landmarkId*2+2] = pos_mu(1);
 
                 observedLandmarks[landmarkId-1] = true;
               }
               else{
-                pos_mu(0) = robot_mu(landmarkId*2+1);
-                pos_mu(1) = robot_mu(landmarkId*2+2);
+                pos_mu(0) = (*robot_mu)[landmarkId*2+1];
+                pos_mu(1) = (*robot_mu)[landmarkId*2+2];
               }
              //Eigen::MatrixXd Delta = MatrixXd::Zero(2,1);
-             double Deltax = pos_mu(0) - robot_mu(0);// delta x
-             double Deltay = pos_mu(1) - robot_mu(1);//delta y
+             double Deltax = pos_mu(0) - (*robot_mu)[0];// delta x
+             double Deltay = pos_mu(1) - (*robot_mu)[1];//delta y
 			 
 			 if(Deltax > range || Deltay > range)
 			 {
@@ -117,7 +117,7 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation){
 			 }
              double q = pow(Deltax, 2) + pow(Deltay, 2);
              expectedZ(0) = sqrt(q);
-             expectedZ(1) = normalized(atan2(Deltay, Deltax) - normalized(robot_mu(2)));
+             expectedZ(1) = normalized(atan2(Deltay, Deltax) - normalized((*robot_mu)[2]));
              LowH << -sqrt(q)*Deltax/q, -sqrt(q)*Deltay/q, 0, sqrt(q)*Deltax/q, sqrt(q)*Deltay/q,
                       Deltay/q,         -1 * Deltax/q,  -q/q, -1*Deltay/q,      Deltax/q;
               H = LowH * Fxj;
@@ -127,7 +127,7 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation){
               Eigen::MatrixXd Si = HQ.inverse();
               Eigen::MatrixXd K = Sigma*Ht*Si;
               Eigen::VectorXd diff = Z - expectedZ;
-			robot_mu = robot_mu + K * diff;
+			 (*robot_mu) = (*robot_mu) + K * diff;
 				/*
                 for (int j = 1; j < diff.size(); j += 2) {
                         while(diff(j)>M_PI) {
@@ -149,5 +149,5 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation){
 
         }
 
-        mu = robot_mu;
+        //mu = (*robot_mu); -----------------not needed since updated by reference
       }
