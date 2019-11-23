@@ -119,8 +119,8 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation){
               Eigen::MatrixXd HQ = (H*Sigma*Ht) + Q;
               Eigen::MatrixXd Si = HQ.inverse();
               Eigen::MatrixXd K = Sigma*Ht*Si;
-              //Eigen::VectorXd diff = Z - expectedZ;
-
+              Eigen::VectorXd diff = Z - expectedZ;
+			robot_mu = robot_mu + K * diff;
 				/*
                 for (int j = 1; j < diff.size(); j += 2) {
                         while(diff(j)>M_PI) {
@@ -130,7 +130,7 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation){
                           diff(j) = diff(j) + M_PI;
                         }
                   }
-              robot_mu = robot_mu + K * diff;
+             
               while(robot_mu(2)>M_PI) {
                   robot_mu(2) = robot_mu(2) - M_PI;
                 }
