@@ -62,25 +62,24 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation){
         int N = observedLandmarks.size();
 
         Eigen::MatrixXd H              = MatrixXd::Zero(5, 2*N + 3); //observation Jacobian. Size is the same as Fx,j
-        Eigen::MatrixXd Q              = MatrixXd::Identity(2,2)*0.01; // sensor noise matrix
-        Eigen::MatrixXd Z              = MatrixXd::Zero(2*m,1);
-        Eigen::MatrixXd expectedZ      = MatrixXd::Zero(2*m,1);
+        Eigen::MatrixXd Q              = MatrixXd::Identity(2*m,2*m)*0.01; // sensor noise matrix
+        Eigen::VectorXd Z              = VectorXd::Zero(2);
+        Eigen::VectorXd expectedZ      = VectorXd::Zero(2);
         Eigen::MatrixXd Fxj            = MatrixXd::Zero(5, 2*N+3);
         Eigen::MatrixXd LowH           = MatrixXd::Zero(2,5);
-
-        Fxj.block<3,3>(0,0) << 1,0,0,
-                               0,1,0,
-                               0,0,1;
-        Fxj.block<2,2>(3,2*m) << 1,0,
-                                 0,1;
 
         for (int i = 0; i < m; i++) {
             auto&     reading = observation[i];
             int       landmarkId = reading.id;
             float     range      = reading.range;
             float     bearing    = reading.bearing;
-            Z(2*i) = range;
-            Z(2*i+1) = bearing;
+            Z(0) = range;
+            Z(1) = bearing;
+            Fxj.block<3,3>(2*i,0) << 1,0,0,
+                                   0,1,0,
+                                   0,0,1;
+            Fxj.block<2,2>(2*i,2*m+1) << 1,0,
+                                       0,1;
             //landmark is not seen before, so to initialize the landmarks
             if (!observedLandmarks[landmarkId-1]) {
                 mu(2*landmarkId+1) = mu(0) + range*cos(mu(2) + bearing);
@@ -88,14 +87,14 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation){
                 //Indicate in the observedLandmarks vector that this landmark has been observed
                 observedLandmarks[landmarkId-1] = true;
                 }
-             Eigen::MatrixXd Delta = MatrixXd::Zero(1,1);
-             Delta(0) = mu(2*landmarkId+1) - mu(0);// delta x
-             Delta(1) = mu(2*landmarkId+2) - mu(1);//delta y
-             double q = pow(Delta(0), 2) + pow(Delta(1), 2);
-             expectedZ(2*i) = sqrt(q);
-             expectedZ(2*i+1) = atan2(Delta(1), Delta(0)) - mu(2);
-             LowH << -sqrt(q)*Delta(0)/q, -sqrt(q)*Delta(1)/q, 0, sqrt(q)*Delta(0)/q, sqrt(q)*Delta(1)/q,
-                      Delta(1)/q,         -1 * Delta(0)/q,  -q/q, -1*Delta(1)/q,      Delta(0)/q;
+             //Eigen::MatrixXd Delta = MatrixXd::Zero(2,1);
+             double Deltax = mu(2*landmarkId+1) - mu(0);// delta x
+             double Deltay = mu(2*landmarkId+2) - mu(1);//delta y
+             double q = pow(Deltax, 2) + pow(Deltay, 2);
+             expectedZ(0) = sqrt(q);
+             expectedZ(1) = atan2(Deltay, Deltax) - mu(2);
+             LowH << -sqrt(q)*Deltax/q, -sqrt(q)*Deltay/q, 0, sqrt(q)*Deltax/q, sqrt(q)*Deltay/q,
+                      Deltay/q,         -1 * Deltax/q,  -q/q, -1*Deltay/q,      Deltax/q;
               H = LowH * Fxj;
               Eigen::MatrixXd Ht = H.transpose();
               Eigen::MatrixXd HQ = (H*Sigma*Ht) + Q;
