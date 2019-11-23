@@ -60,13 +60,16 @@ void EKFSLAM::Prediction(const OdoReading& motion) {
 void EKFSLAM::Correction(const vector<LaserReading>& observation){
         int m = observation.size(); // number of measurements
         int N = observedLandmarks.size();
+        int sigma_rows = this->Sigma.rows();
+
 
         Eigen::MatrixXd H              = MatrixXd::Zero(5, 2*N + 3); //observation Jacobian. Size is the same as Fx,j
-        Eigen::MatrixXd Q              = MatrixXd::Identity(2*m,2*m)*0.01; // sensor noise matrix
+        Eigen::MatrixXd Q              = MatrixXd::Identity(2,2)*0.01; // sensor noise matrix
         Eigen::VectorXd Z              = VectorXd::Zero(2);
         Eigen::VectorXd expectedZ      = VectorXd::Zero(2);
-        Eigen::MatrixXd Fxj            = MatrixXd::Zero(5, 2*N+3);
+        Eigen::MatrixXd Fxj            = MatrixXd::Zero(5, sigma_rows);
         Eigen::MatrixXd LowH           = MatrixXd::Zero(2,5);
+
 
         for (int i = 0; i < m; i++) {
             auto&     reading = observation[i];
@@ -75,11 +78,11 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation){
             float     bearing    = reading.bearing;
             Z(0) = range;
             Z(1) = bearing;
-            Fxj.block<3,3>(2*i,0) << 1,0,0,
+            Fxj.block<3,3>(0,0) << 1,0,0,
                                    0,1,0,
                                    0,0,1;
-            Fxj.block<2,2>(2*i,2*m+1) << 1,0,
-                                       0,1;
+            Fxj.block<2,2>(3,2*landmarkId+1) << 1,0,
+                                                0,1;
             //landmark is not seen before, so to initialize the landmarks
             if (!observedLandmarks[landmarkId-1]) {
                 mu(2*landmarkId+1) = mu(0) + range*cos(mu(2) + bearing);
